@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "rebuild-tensor-from-reference"
+version = "0.1.0"
+description = "A code sample demonstrating how to share and rebuild a PyTorch GPU tensor via its pointer/reference between different processes."
+authors = ["Ross Tsenov <tsnovronia3@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.0.0"
+pyzmq = "^26.2.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.11.1"
+ruff = "^0.6.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

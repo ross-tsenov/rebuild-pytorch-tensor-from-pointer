@@ -9,19 +9,13 @@ from typing import cast
 import torch
 import zmq
 
-from .core import CudaRebuildMetadata, SerializedCudaRebuildMetadata, rebuild_cuda_tensor, share_cuda_tensor
+from tqdm import tqdm
+
+from src import settings
+from src.core import CudaRebuildMetadata, SerializedCudaRebuildMetadata, rebuild_cuda_tensor, share_cuda_tensor
 
 
-def basic_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
-    """Sends the entire tensor object to the server and receives the rebuilt tensor from the server."""
-
-    sock.send_pyobj(tensor)
-    received_tensor = sock.recv_pyobj()
-
-    return received_tensor
-
-
-def dataclass_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
+def dataclass_metadata_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
     """Shares CUDA tensor metadata with the server and receives the rebuilt tensor."""
 
     sock.send_pyobj(share_cuda_tensor(tensor))
@@ -31,7 +25,7 @@ def dataclass_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor
     return received_tensor
 
 
-def json_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
+def json_metadata_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
     """Shares CUDA tensor metadata with the server in serialized JSON format and receives the rebuilt tensor."""
 
     sock.send_json(share_cuda_tensor(tensor).to_serialized_dict())
@@ -41,21 +35,35 @@ def json_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
     return received_tensor
 
 
+def full_tensor_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
+    """Sends the entire tensor object to the server and receives the rebuilt tensor from the server."""
+
+    sock.send_pyobj(tensor)
+    received_tensor = sock.recv_pyobj()
+
+    return received_tensor
+
+
+RUNNING_TYPE_TO_FUNC = {
+    settings.RunningType.DATACLASS_METADATA: dataclass_metadata_client,
+    settings.RunningType.JSON_METADATA: json_metadata_client,
+    settings.RunningType.FULL_TENSOR: full_tensor_client,
+}
+
+
 def main() -> None:
     ctx = zmq.Context()
     sock = ctx.socket(zmq.REQ)
-    sock.connect("tcp://0.0.0.0:6000")
+    sock.connect(f"{settings.SERVER_PROTOCOL}://{settings.SERVER_ADDRESS}:{settings.SERVER_PORT}")
 
     latencies: list[float] = []
-    for _ in range(1000):
-        tensor_to_send = torch.randn((1920, 1080, 3), dtype=torch.float, device="cuda:0")
+    for _ in tqdm(range(settings.NUMBER_OF_ITERATION)):
+        tensor_to_send = torch.randn(settings.TENSOR_SIZE, dtype=settings.TENSOR_DTYPE, device=settings.TENSOR_DEVICE)
 
         before = time.perf_counter()
-        # Choose one client implementation and ensure the server is using the same approach.
-        # received_tensor = basic_client(sock, tensor_to_send)
-        # received_tensor = dataclass_client(sock, tensor_to_send)
-        received_tensor = json_client(sock, tensor_to_send)
+        received_tensor = RUNNING_TYPE_TO_FUNC[settings.RUNNING_TYPE](sock, tensor_to_send)
         after = time.perf_counter()
+
         latency = after - before
         latencies.append(latency)
 

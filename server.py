@@ -6,18 +6,11 @@ from typing import cast
 
 import zmq
 
-from .core import CudaRebuildMetadata, SerializedCudaRebuildMetadata, rebuild_cuda_tensor, share_cuda_tensor
+from src import settings
+from src.core import CudaRebuildMetadata, SerializedCudaRebuildMetadata, rebuild_cuda_tensor, share_cuda_tensor
 
 
-def run_basic_server(sock: zmq.SyncSocket) -> None:
-    """Runs a basic server that receives a pickled tensor and sends it back unchanged."""
-
-    while True:
-        tensor = sock.recv_pyobj()
-        sock.send_pyobj(tensor)
-
-
-def run_pyobj_server(sock: zmq.SyncSocket) -> None:
+def dataclass_metadata_server(sock: zmq.SyncSocket) -> None:
     """Runs a server that receives `CudaRebuildMetadata`, rebuilds the tensor
     using this metadata, re-shares the tensor by generating new `CudaRebuildMetadata`,
     and sends it back."""
@@ -29,7 +22,7 @@ def run_pyobj_server(sock: zmq.SyncSocket) -> None:
         sock.send_pyobj(share_cuda_tensor(rebuilt_tensor))
 
 
-def run_json_server(sock: zmq.SyncSocket) -> None:
+def json_metadata_server(sock: zmq.SyncSocket) -> None:
     """Runs a server that receives `SerializedCudaRebuildMetadata` as a dictionary,
     rebuilds the tensor using this metadata, re-shares the tensor by generating new
     `SerializedCudaRebuildMetadata`, and sends it back as a dictionary."""
@@ -41,15 +34,27 @@ def run_json_server(sock: zmq.SyncSocket) -> None:
         sock.send_json(share_cuda_tensor(rebuilt_tensor).to_serialized_dict())
 
 
+def full_tensor_server(sock: zmq.SyncSocket) -> None:
+    """Runs a basic server that receives a pickled tensor and sends it back unchanged."""
+
+    while True:
+        tensor = sock.recv_pyobj()
+        sock.send_pyobj(tensor)
+
+
+RUNNING_TYPE_TO_FUNC = {
+    settings.RunningType.FULL_TENSOR: full_tensor_server,
+    settings.RunningType.DATACLASS_METADATA: dataclass_metadata_server,
+    settings.RunningType.JSON_METADATA: json_metadata_server,
+}
+
+
 def main() -> None:
     ctx = zmq.Context()
     sock = ctx.socket(zmq.REP)
-    sock.bind("tcp://*:6000")
+    sock.bind(f"{settings.SERVER_PROTOCOL}://*:{settings.SERVER_PORT}")
 
-    # Choose one and ensure the client file is using the same option.
-    run_basic_server(sock)
-    # run_pyobj_server(sock)
-    # run_json_server(sock)
+    RUNNING_TYPE_TO_FUNC[settings.RUNNING_TYPE](sock)
 
 
 if __name__ == "__main__":

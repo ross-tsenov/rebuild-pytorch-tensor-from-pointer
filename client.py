@@ -12,7 +12,12 @@ import zmq
 from tqdm import tqdm
 
 from src import settings
-from src.core import CudaRebuildMetadata, SerializedCudaRebuildMetadata, rebuild_cuda_tensor, share_cuda_tensor
+from src.core import (
+    CudaRebuildMetadata,
+    SerializedCudaRebuildMetadata,
+    rebuild_cuda_tensor,
+    share_cuda_tensor,
+)
 
 
 def dataclass_metadata_client(sock: zmq.SyncSocket, tensor: torch.Tensor) -> torch.Tensor:
@@ -58,7 +63,11 @@ def main() -> None:
 
     latencies: list[float] = []
     for _ in tqdm(range(settings.NUMBER_OF_ITERATION)):
-        tensor_to_send = torch.randn(settings.TENSOR_SIZE, dtype=settings.TENSOR_DTYPE, device=settings.TENSOR_DEVICE)
+        tensor_to_send = torch.randn(
+            settings.TENSOR_SIZE,
+            dtype=settings.TENSOR_DTYPE,
+            device=settings.TENSOR_DEVICE,
+        )
 
         before = time.perf_counter()
         received_tensor = RUNNING_TYPE_TO_FUNC[settings.RUNNING_TYPE](sock, tensor_to_send)

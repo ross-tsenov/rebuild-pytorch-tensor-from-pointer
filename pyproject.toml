@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "rebuild-tensor-from-reference"
+name = "rebuild-tensor-from-pointer"
 version = "0.1.0"
 description = "A code sample demonstrating how to share and rebuild a PyTorch GPU tensor via its pointer/reference between different processes."
-authors = ["Ross Tsenov <tsnovronia3@gmail.com>"]
+authors = ["Ross Tsenov <ross-tsenov@github.com>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.10.1"
 torch = "^2.0.0"
 pyzmq = "^26.2.0"
 tqdm = "^4.66.5"
@@ -19,3 +19,58 @@ ruff = "^0.6.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 122
+target-version = "py310"
+lint.select = [
+    "A",
+    "B",
+    "E",
+    "F",
+    "G",
+    "I",
+    "N",
+    "W",
+    "Q",
+    "S",
+    "UP",
+    "C9",
+    "PT",
+    "ANN",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "SIM",
+]
+
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+lines-between-types=1
+
+
+[tool.ruff.lint.pylint]
+max-args = 8
+max-branches = 25
+max-returns = 9
+max-statements = 30
+
+
+[tool.mypy]
+warn_no_return = true
+disallow_subclassing_any = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+allow_redefinition = true
+pretty = true
+follow_imports="silent"
+ignore_missing_imports = true
+show_error_codes = true
+exclude = [
+    "__init__.py",
+]

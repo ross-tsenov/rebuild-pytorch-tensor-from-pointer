@@ -7,7 +7,12 @@ from typing import cast
 import zmq
 
 from src import settings
-from src.core import CudaRebuildMetadata, SerializedCudaRebuildMetadata, rebuild_cuda_tensor, share_cuda_tensor
+from src.core import (
+    CudaRebuildMetadata,
+    SerializedCudaRebuildMetadata,
+    rebuild_cuda_tensor,
+    share_cuda_tensor,
+)
 
 
 def dataclass_metadata_server(sock: zmq.SyncSocket) -> None:

@@ -1,4 +1,4 @@
-# rebuild-tensor-from-reference-sample
+# Rebuild Tensor From Reference Sample
 This repo contains sample code and usage instructions on how you can share PyTorch tensor pointers/references between processes running on the same system and using the same GPU, instead of copying the entire tensor between processes through the CPU. This approach can save significant time. Let’s just say, at one point, I went a little crazy with microservices architecture and AI processing. In the end, we scrapped the idea at work because it wasn't worth the effort, and unfortunately, it doesn’t play well with Jetsons. But hey, I wanted to share it here in case someone else falls down the same rabbit hole.
 
 The code heavily relies on the use of "private" PyTorch functions and methods, if you will. So, I highly **do not recommend** using this in any large-scale production environment—use it just for fun or experimentation.
@@ -12,7 +12,7 @@ There’s a client and a server. The server essentially takes in a tensor pointe
 - `share_cuda_tensor`: A function that takes in a tensor, shares its memory, and generates `CudaRebuildMetadata`.
 - `rebuild_cuda_tensor`: A function that takes in `CudaRebuildMetadata` and rebuilds the tensor. That’s about it.
 
-### Experimentation
+### Experiment
 
 I experimented with sending a fully pickled tensor and just metadata to the server, receiving it back, and tracking the timing for the round trip of the tensor to and from the server over a TCP connection on localhost. The experiment ran over 100,000 iterations, and the average time for each alternative was compared. Note that the tensor size was `(1920, 1080, 3)`, and the dtype was `torch.float`."
 
@@ -24,4 +24,4 @@ So, you could achieve more than a 100x improvement this way if you need to send 
 
 ### Conclusion
 
-You can see that with just some custom code and data types, you can easily improve the transfer speed of a tensor if it’s located on the same GPU, that is. If sub-1ms transfer times are still too slow for you, well, maybe you shouldn't be using Python in the first place.
+You can see that with just some custom code and data types, you can easily improve the transfer speed of a tensor if it’s located on the same GPU, that is. If sub-1ms transfer times are still too slow for you, well, maybe you shouldn't be using Python in the first place. If you'd like to use my code, feel free; everything you need is located in `src/core.py`.
